@@ -12,7 +12,7 @@ graph = None
 # 配置 CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # 允许 Vite 前端的地址
+    allow_origins=["http://localhost:5173", "https://pandalow.github.io/"],  #允许 Vite 前端的地址
     allow_credentials=True,
     allow_methods=["*"],  # 允许所有方法（GET, POST, etc.）
     allow_headers=["*"],  # 允许所有 headers
