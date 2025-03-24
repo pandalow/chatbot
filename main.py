@@ -44,9 +44,3 @@ def ask(question: Question):
     # Return the final cleaned answer
     return Answer(answer=cleaned_text)
 
-# ✅ Optional: Enable running with uvicorn directly
-if __name__ == "__main__":
-    import os
-    import uvicorn
-    port = int(os.environ.get("PORT", 4000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
