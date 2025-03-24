@@ -1,3 +1,4 @@
-resume.json
+*.json
 .env
 .langchain_play_ground.ipynb
+__pycache__/
