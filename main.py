@@ -9,21 +9,21 @@ from slowapi.util import get_remote_address
 
 app = FastAPI()
 
-# CORS config
+# ✅ CORS Middleware，确保能处理 preflight OPTIONS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://pandalow.github.io/"],  # Allowed front-end origins
+    allow_origins=["http://localhost:5173", "https://pandalow.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Rate Limiter config
+# ✅ Rate Limiter
 limiter = Limiter(key_func=get_remote_address, default_limits=["10/hour"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# model
+# ✅ 请求和响应数据模型
 class Question(BaseModel):
     message: str
 
@@ -33,22 +33,27 @@ class Answer(BaseModel):
 vector_store = None
 graph = None
 
-# startup load graph and vector store
+# ✅ 启动时加载 graph 和 vector store
 @app.on_event("startup")
 def startup_event():
     global vector_store, graph
     graph, vector_store = building_graph()
 
-# handle OPTIONS request, prevent 400 error
+# ✅ 专门处理 OPTIONS，避免 CORS 400 报错
 @app.options("/ask")
 async def options_handler():
     return Response(status_code=200)
 
-# main interface, add rate limit (but exclude OPTIONS request)
+# ✅ slowapi 安全判断 - 过滤掉 OPTIONS 请求
+def skip_options(**kwargs):
+    request = kwargs.get("request")
+    return request and request.method == "OPTIONS"
+
+# ✅ 主 /ask 接口，带限流且兼容 OPTIONS
 @app.post("/ask", response_model=Answer)
-@limiter.limit("10/hour", exempt_when=lambda request: request.method == "OPTIONS")
+@limiter.limit("10/hour", exempt_when=skip_options)
 async def ask(request: Request, question: Question):
     response = graph.invoke({"question": question.message})
-    # clean <think> tag content
+    # 清除 <think> 标签内容
     cleaned_text = re.sub(r'<think>.*?</think>\s*', '', response["answer"], flags=re.DOTALL)
     return Answer(answer=cleaned_text)
