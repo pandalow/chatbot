@@ -3,6 +3,13 @@ from ragbot.chatbot import building_graph
 from fastapi.middleware.cors import CORSMiddleware
 import re
 from pydantic import BaseModel
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["10/hour"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app = FastAPI()
 
@@ -34,6 +41,7 @@ def startup_event():
 
 # ✅ Define the API endpoint for receiving questions and generating answers
 @app.post("/ask", response_model=Answer)
+@limiter.limit("10/hour")
 def ask(question: Question):
     # Run the retrieval-augmented generation (RAG) graph
     response = graph.invoke({"question": question.message})
