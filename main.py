@@ -1,7 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from ragbot.chatbot import building_graph
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Request
 import re
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -10,42 +9,46 @@ from slowapi.util import get_remote_address
 
 app = FastAPI()
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["10/hour"])
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-
-
-vector_store = None
-graph = None
-
-# ✅ Configure CORS to allow requests from specific front-end domains
+# CORS config
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "https://pandalow.github.io/"],  # Allowed front-end origins
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all request headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# ✅ Define the request schema
+# Rate Limiter config
+limiter = Limiter(key_func=get_remote_address, default_limits=["10/hour"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# model
 class Question(BaseModel):
     message: str
 
-# ✅ Define the response schema
 class Answer(BaseModel):
     answer: str
 
-# ✅ Initialize the graph and vector store on application startup
+vector_store = None
+graph = None
+
+# startup load graph and vector store
 @app.on_event("startup")
 def startup_event():
     global vector_store, graph
     graph, vector_store = building_graph()
 
-# ✅ Define the API endpoint for receiving questions and generating answers
+# handle OPTIONS request, prevent 400 error
+@app.options("/ask")
+async def options_handler():
+    return Response(status_code=200)
+
+# main interface, add rate limit (but exclude OPTIONS request)
 @app.post("/ask", response_model=Answer)
-@limiter.limit("10/hour")
+@limiter.limit("10/hour", exempt_when=lambda request: request.method == "OPTIONS")
 async def ask(request: Request, question: Question):
     response = graph.invoke({"question": question.message})
+    # clean <think> tag content
     cleaned_text = re.sub(r'<think>.*?</think>\s*', '', response["answer"], flags=re.DOTALL)
     return Answer(answer=cleaned_text)
