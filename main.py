@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from ragbot.chatbot import building_graph
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
 import re
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -44,13 +45,7 @@ def startup_event():
 # ✅ Define the API endpoint for receiving questions and generating answers
 @app.post("/ask", response_model=Answer)
 @limiter.limit("10/hour")
-def ask(question: Question):
-    # Run the retrieval-augmented generation (RAG) graph
+async def ask(request: Request, question: Question):
     response = graph.invoke({"question": question.message})
-
-    # Clean up the response by removing any <think> tags and their content
     cleaned_text = re.sub(r'<think>.*?</think>\s*', '', response["answer"], flags=re.DOTALL)
-    
-    # Return the final cleaned answer
     return Answer(answer=cleaned_text)
-
