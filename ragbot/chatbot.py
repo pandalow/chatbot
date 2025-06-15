@@ -13,7 +13,7 @@ from langchain.chat_models import init_chat_model
 
 def building_graph():
     
-    llm = init_chat_model("deepseek-r1-distill-qwen-32b", model_provider="groq")
+    llm = init_chat_model("deepseek-r1-distill-llama-70b", model_provider="groq")
 
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-MiniLM-L6-v2")
     vector_store = Chroma(embedding_function=embeddings)
