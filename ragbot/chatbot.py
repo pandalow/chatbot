@@ -1,4 +1,4 @@
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain.embeddings import OpenAIEmbeddings
 from langchain_chroma import Chroma
 
 from langchain_community.document_loaders import JSONLoader
@@ -15,7 +15,7 @@ def building_graph():
     
     llm = init_chat_model("deepseek-r1-distill-llama-70b", model_provider="groq")
 
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
     vector_store = Chroma(embedding_function=embeddings)
 
 
