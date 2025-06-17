@@ -7,7 +7,7 @@ Supports rate-limiting, CORS for frontend integration, and retrieval with Huggin
 
 ## 🚀 Features
 ✅ Retrieval-Augmented Generation using `langgraph`  
-✅ HuggingFace Sentence Transformers for semantic search  
+✅ OpenAI Sentiment embeddings
 ✅ Chroma vector database for document retrieval  
 ✅ FastAPI REST API ready for frontend integration  
 ✅ CORS configured for specific frontend URLs  
